@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "CLOSET_APP",
-    "slug": "CLOSET_APP",
+    "slug": "closet_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,9 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ahamadu.closetapp"
     },
     "android": {
+      "bundleIdentifier": "com.ahamadu.closetapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -24,6 +26,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "98409beb-bb26-420d-9511-ebdae968be75"
+      }
     }
   }
+
+  
 }
+
