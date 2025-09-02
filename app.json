@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "closetapp",
     "name": "CLOSET_APP",
     "slug": "closet_app",
     "version": "1.0.0",
@@ -31,9 +32,9 @@
       "eas": {
         "projectId": "98409beb-bb26-420d-9511-ebdae968be75"
       }
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
-
-  
 }
-
