@@ -4,14 +4,13 @@ import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
-import Calendar from "./Calendar.jsx"
-
-import Style from "./Style.jsx"
+import Favorites from "./Favorites.jsx"
 import Add from "./Add.jsx"
+import Style from "./Style.jsx"
 import { useRouter } from 'expo-router';
 const router = useRouter();
 
-const Favorites = () => {
+const Calendar = () => {
     return (
       
         <LinearGradient
@@ -25,7 +24,10 @@ const Favorites = () => {
       <Text style={styles.title}>Klozet</Text>
       <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:83,          
       fontWeight: 'medium',
-      color: 'white'}}>Favorites</Text>
+      color: 'white'}}>calendar</Text>
+      <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:83,          
+      fontWeight: 'medium',
+      color: 'white'}}>Calendar</Text>
 
       {/* Top Nav view */}
         <View style={{position: 'absolute',
@@ -87,7 +89,7 @@ const Favorites = () => {
   }
   
 
-export default Favorites;
+export default Calendar;
 
 const styles = StyleSheet.create({container:{flex:1},
     title: {fontSize: 40,          
