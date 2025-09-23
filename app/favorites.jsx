@@ -4,10 +4,6 @@ import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
-import Calendar from "./Calendar.jsx"
-
-import Style from "./Style.jsx"
-import Add from "./Add.jsx"
 import { useRouter } from 'expo-router';
 const router = useRouter();
 
@@ -39,7 +35,7 @@ const Favorites = () => {
         </TouchableOpacity>
          
          {/* Favorites */}
-         <TouchableOpacity onPress={()=>router.push('/Favorties')}>
+         <TouchableOpacity onPress={()=>router.push('/Favorites')}>
         <Image source={heartlogo} style={styles.favorites}/>
         <Text style={{position:"absolute",right:1,fontSize: 14, top:33,          
       fontWeight: 'medium',

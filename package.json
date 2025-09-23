@@ -9,19 +9,44 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@shopify/react-native-skia": "^2.2.15",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "esm": "^3.2.25",
     "expo": "~53.0.22",
     "expo-constants": "~17.1.7",
+    "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "^14.1.5",
     "expo-linking": "~7.1.7",
     "expo-router": "~5.1.5",
     "expo-status-bar": "~2.2.3",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
     "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-native": "0.79.6",
+    "react-native-dotenv": "^3.4.11",
+    "react-native-fs": "^2.20.0",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.1"
+    "react-native-screens": "~4.11.1",
+    "react-native-web": "^0.20.0",
+    "replicate": "^1.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
   },
-  "private": true
+  "private": true,
+  "description": "Kloset is a full-stack web application that allows users to digitize their wardrobe, create outfits, and plan what to wear throughout the week. The app provides a virtual closet where users can upload images of their clothing, drag-and-drop items onto a canvas to build outfits, and schedule those outfits on a calendar. It also includes social features for sharing looks with friends.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahamadu1/Closet-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Ahamadu1/Closet-app/issues"
+  },
+  "homepage": "https://github.com/Ahamadu1/Closet-app#readme"
 }
