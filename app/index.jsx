@@ -6,6 +6,7 @@ import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../database/supabase';
 const router = useRouter();
 
 
@@ -22,6 +23,9 @@ const Home = () => {
     //     alert("You didnt add any image")
     //   }
     // }
+  const {user} = supabase.auth.getUser()
+  const {data,error} = supabase.from("Tops").select('*')
+
     return (
       
         <LinearGradient
@@ -58,6 +62,11 @@ const Home = () => {
         {/* Top Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1, marginVertical: 15 }}></View>
        
+          {/* Clothes*/}
+        
+
+
+
         {/* Bottom Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1,marginVertical:670}}></View>
 
@@ -68,7 +77,7 @@ const Home = () => {
   bottom: 70,flexDirection:"column", color:"white"}}>
          
          {/* Calendar */}
-         <TouchableOpacity onPress={()=>router.push('/Calendar')}>
+         <TouchableOpacity onPress={()=>router.push('/Schedule')}>
         <Image source={calendarlogo} style={styles.calendar}/>
         <Text style={{position:"absolute",left:1,fontSize: 14, top:38,          
       fontWeight: 'medium', color: 'white'}}>Calendar</Text>

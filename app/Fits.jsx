@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
@@ -6,10 +6,14 @@ import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
 import React, {useState,useEffect} from 'react';
 import { useRouter } from 'expo-router';
+import pants from '../assets/LEPANTS.png';
+import shirt from '../assets/LESHIRT.png';
 const router = useRouter();
 
 
-const Fits = () => {
+const Fits = (props) => {
+  const photos = [{id:1,source:pants},{id:2,source:shirt}]
+
   const [allFits, setAllFits] = useState([{}])
     return (
       
@@ -48,6 +52,16 @@ const Fits = () => {
         
         {/* Top Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1, marginVertical: 15 }}></View>
+
+         {/* Fits grid */} 
+        <View style={{flex:1,flexDirection: "row",  flexWrap:"wrap",justifyContent: "space-between",}}>
+          {photos.map((photo)=>(
+            <Image key={photo.id} source={photo.source}  style={{width: "48%",  
+              aspectRatio: 1,borderWidth:2 ,width: 300, height:300, borderColor:"black",}}></Image>
+            
+
+          ))}
+        </View>
        
         {/* Bottom Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1,marginVertical:670}}></View>

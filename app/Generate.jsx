@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity,TextInput } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
@@ -8,7 +8,8 @@ import { useRouter,useLocalSearchParams } from 'expo-router';
 import { Alert, Platform } from 'react-native';
 import React, {useState,useEffect} from 'react';
 import ViewShot from "react-native-view-shot";
-import * as MediaLibrary from "expo-media-library";
+import { useRef } from 'react';
+
 
 
 
@@ -21,6 +22,7 @@ const Generate = () => {
   const [processedTopImg, setProcessedTopImg] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [savefit, setsavefit] = useState('');
+  const [next,setNext] = useState(false);
   
   
   const capture = async()=>{
@@ -94,6 +96,8 @@ const Generate = () => {
     return (
       
       
+      
+      
         <LinearGradient
         colors={['#2A003F', '#1A0029', '#0D0014']} 
         locations={[0.1, 0.5, 1]}
@@ -101,6 +105,10 @@ const Generate = () => {
           end={{ x: 1, y: 1 }}
         style={styles.container}>
       {/* Full screen view */}
+      {next &&
+          <Fits photos={savefit}/>
+      }
+      
       <View style={styles.container}>
       <Text style={styles.title}>Klozet</Text>
     
@@ -134,6 +142,7 @@ const Generate = () => {
         <Text style={{right:30 ,top:20, position:"absolute",height:35, backgroundColor:"black", width:50,justifyContent:"center",alignItems:"center", borderRadius:10, borderColor:"grey",borderWidth:1, color:"white"}}>Save</Text>
         </View>
         </TouchableOpacity>
+       
         <ViewShot ref={viewRef}  options={{ format: "jpg", quality: 0.9 }}>
         <View style={{height:550,width:500, borderColor:"black", borderWidth:10, alignSelf:"center", alignItems:"center"}}>
           <Image source={{uri :processedTopImg || topImg}} style={{height:200,width:200, top:0}} resizeMode="contain"></Image>
@@ -154,7 +163,7 @@ const Generate = () => {
   bottom: 70,flexDirection:"column", color:"white"}}>
          
          {/* Calendar */}
-         <TouchableOpacity onPress={()=>router.push('/Calendar')}>
+         <TouchableOpacity onPress={()=>router.push('/Schedule')}>
         <Image source={calendarlogo} style={styles.calendar}/>
         <Text style={{position:"absolute",left:1,fontSize: 14, top:38,          
       fontWeight: 'medium', color: 'white'}}>Calendar</Text>

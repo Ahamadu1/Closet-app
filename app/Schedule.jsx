@@ -1,13 +1,21 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient';
+import  {LinearGradient}  from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
-import { useRouter } from 'expo-router';
-const router = useRouter();
+import { Calendar } from 'react-native-calendars';
+import { useRouter,useLocalSearchParams } from 'expo-router';
+import React, {useState,useEffect} from 'react';
 
-const Calendar = () => {
+
+
+const Schedule = () => {
+  const router = useRouter();
+  const [markedDates, setMarkedDates] = useState({});
+  const [selected, setSelected] = useState("");
+  
+
     return (
       
         <LinearGradient
@@ -19,9 +27,7 @@ const Calendar = () => {
       {/* Full screen view */}
       <View style={styles.container}>
       <Text style={styles.title}>Klozet</Text>
-      <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:83,          
-      fontWeight: 'medium',
-      color: 'white'}}>calendar</Text>
+      
       <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:83,          
       fontWeight: 'medium',
       color: 'white'}}>Calendar</Text>
@@ -48,6 +54,32 @@ const Calendar = () => {
         
         {/* Top Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1, marginVertical: 15 }}></View>
+
+
+        {/* The calendar view */}
+        <View style={{ flex: 1, marginTop: 50 }}>
+      {/* <Calendar
+        onDayPress={(day) => {
+          console.log('selected day', day);
+        }}
+        markedDates={{
+          '2025-09-23': { selected: true, marked: true, selectedColor: 'purple' },
+        }}
+      /> */}
+
+    <Calendar
+      onDayPress={(day) => {
+        setSelected(day.dateString);
+      }}
+      markedDates={{
+        [selected]: { selected: true, selectedColor: "purple" }
+      }}
+    />
+
+    </View>
+
+
+
        
         {/* Bottom Border */}
         <View style={{borderBottomColor:"grey",borderBottomWidth:1,marginVertical:670}}></View>
@@ -86,7 +118,7 @@ const Calendar = () => {
   }
   
 
-export default Calendar;
+export default Schedule;
 
 const styles = StyleSheet.create({container:{flex:1},
     title: {fontSize: 40,          

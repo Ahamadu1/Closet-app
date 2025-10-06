@@ -7,6 +7,7 @@ import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../database/supabase';
 const router = useRouter();
 
 
@@ -27,6 +28,14 @@ const Add = ()=>{
         alert("You didnt add any image")
       }
     }
+  const saveImg = async ()=>{
+    const data = await supabase.auth.getUser();
+    const {error} = await supabase
+    .from('Tops')
+    .insert([{link:photo.assets[0].uri, name : name}])
+    if (error) console.log(error)
+    router.replace('/');
+  }
   const openCam = async()=>{
     const { status } = await ImagePicker.requestCameraPermissionsAsync({ allowsEditing: true,
       quality: 1});
@@ -90,8 +99,11 @@ const Add = ()=>{
         
         
           <View>
-            <View><TextInput style={{backgroundColor:"black", color:'white',width:200, height:50, borderRadius:8, alignSelf:'center'}} placeholder="Enter a name.." placeholderTextColor="white"></TextInput></View>
+            
+            <View><TextInput style={{backgroundColor:"black", color:'white',width:200, height:50, borderRadius:8, alignSelf:'center'}} placeholder="Enter a name.." placeholderTextColor="white" onChangeText={(text)=>{setname(text)}}></TextInput></View>
+          <TouchableOpacity onPress={saveImg}>
             <View style={[styles.plusSectionButtons,{right:10}]}><Text style={{ color:'white', fontSize:16, alignSelf:"center"}}>Save</Text></View>
+            </TouchableOpacity>
           <Image source={{uri: photo.assets[0].uri}} style={{height:150, width:300,alignSelf:"center", top:50}}></Image>
           
           <View style>
