@@ -46,7 +46,7 @@ const Schedule = () => {
          {/* Favorites */}
          <TouchableOpacity onPress={()=>router.push('/Favorites')}>
         <Image source={heartlogo} style={styles.favorites}/>
-        <Text style={{position:"absolute",right:1,fontSize: 14, top:33,          
+        <Text style={{position:"absolute",right:1,fontSize: 14, top:63,          
       fontWeight: 'medium',
       color: 'white'}}>Favorites</Text>
       </TouchableOpacity>
@@ -121,17 +121,17 @@ const Schedule = () => {
 export default Schedule;
 
 const styles = StyleSheet.create({container:{flex:1},
-    title: {fontSize: 40,          
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-    alignSelf: "center",},
+    title: {fontSize: 30,          
+      fontWeight: 'bold',
+      color: 'white',
+      marginTop: 50,
+      alignSelf: "center",},
     
-    favorites:{height:30, width:35 ,position:"absolute",right:13,top:2},
+    favorites:{height:30, width:35 ,position:"absolute",right:13,top:35},
     style:{height:40, width:40 ,position:"absolute",right:10},
     calendar:{height:40, width:40,position:"absolute", left:10, top:0},
     plus:{height:40, width:40 ,position:"absolute", alignSelf: "center"},
-    fits:{position:"absolute",left:7,fontSize: 18, top:9,          
+    fits:{position:"absolute",left:7,fontSize: 18, top:55,          
       fontWeight: 'medium',
       color: 'white',}
 

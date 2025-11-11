@@ -2,8 +2,9 @@
   "expo": {
     "scheme": "closetapp",
     "name": "CLOSET_APP",
-    "slug": "closet_app",
+    "slug": "closetapp",
     "version": "1.0.0",
+    "deeplinks": true,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,18 +24,23 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.ahamadu.closetapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "98409beb-bb26-420d-9511-ebdae968be75"
+        "projectId": "1dc7d5e5-56d2-4276-9791-b12fa4355e61"
+      },
+      "router": {
+        "origin": false
       }
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "owner": "ahamadu123"
   }
 }

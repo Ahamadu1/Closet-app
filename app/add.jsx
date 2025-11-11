@@ -8,11 +8,20 @@ import calendarlogo from '../assets/calendaricon.png';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../database/supabase';
+import * as FileSystem from 'expo-file-system/legacy'
+import { decode } from 'base64-arraybuffer'
+import { Picker } from "@react-native-picker/picker"
+import DropDownPicker from "react-native-dropdown-picker";
+
+
+// import { center } from '@shopify/react-native-skia';
 const router = useRouter();
 
 
 const Add = ()=>{
+  const [selectedValue, setSelectedValue] = useState("Tops")
   const [showImg,setshowImg] = useState(false);
+  const [open, setOpen] = useState(false);  
   const [photo,setphoto] = useState();
   const [name,setname]= useState();
   const addImg = async ()=>{
@@ -27,13 +36,57 @@ const Add = ()=>{
       }else{
         alert("You didnt add any image")
       }
+    
+
+
     }
+  // const addfav = async ()={
+
+  // }
+
+
   const saveImg = async ()=>{
-    const data = await supabase.auth.getUser();
-    const {error} = await supabase
-    .from('Tops')
-    .insert([{link:photo.assets[0].uri, name : name}])
-    if (error) console.log(error)
+    // console.log(selectedValue)
+
+    // console.log(`this ${selectedValue}`)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!photo?.assets?.length) {
+      alert("No photo selected");
+      return;
+    }
+    const base64 = await FileSystem.readAsStringAsync(photo.assets[0].uri, {
+      encoding: 'base64',
+    })
+    const folder = name || 'default'
+    const filePath = `${name}/${Date.now()}.jpg`
+
+    const { error } = await supabase.storage
+  .from('Tops') 
+  .upload(filePath, decode(base64), {
+    contentType: 'image/jpeg',
+  })
+  if (error) {
+    console.error('Upload error:', error)
+    return
+  }
+  console.log(`${selectedValue}`)
+  const { data: publicData } = supabase.storage.from('Tops').getPublicUrl(filePath)
+
+  const publicUrl = publicData.publicUrl
+  // await supabase.from("Tops").insert([{ link: publicUrl, userid: user.id }])
+  const { data: closetData, error: closetError } = await supabase
+  .from("Closet")
+  .select("id")
+  .eq("userid", user.id)
+  .single();
+  
+  await supabase.from("Tops").insert([{ link: publicUrl,name:folder,  closetid: closetData.id }])
+
+  // if (addfav){
+  //   await supabase.from("Favorites").insert([{ link: publicUrl, userid: user.id }])
+  // }
+
+    if (error) console.log(error);
     router.replace('/');
   }
   const openCam = async()=>{
@@ -60,7 +113,7 @@ const Add = ()=>{
     
       return (
         
-        
+      
         
         <LinearGradient
         colors={['#2A003F', '#1A0029', '#0D0014']} 
@@ -86,7 +139,7 @@ const Add = ()=>{
          {/* Favorites */}
          <TouchableOpacity onPress={()=>router.push('/Favorites')}>
         <Image source={heartlogo} style={styles.favorites}/>
-        <Text style={{position:"absolute",right:1,fontSize: 14, top:33,          
+        <Text style={{position:"absolute",right:1,fontSize: 14, top:63,          
       fontWeight: 'medium',
       color: 'white'}}>Favorites</Text>
       </TouchableOpacity>
@@ -99,8 +152,23 @@ const Add = ()=>{
         
         
           <View>
-            
+              <DropDownPicker
+  open={open}
+  value={selectedValue}
+  items={[
+    {label: 'Tops', value: 'Tops'},
+    {label: 'Bottoms', value: 'Bottoms'},
+    {label: 'Shoes', value: 'Shoes'},
+    {label: 'Accessories', value: 'Accessories'}
+  ]}
+  setOpen={setOpen}
+  setValue={setSelectedValue}
+  style={{backgroundColor: 'black', borderColor: 'grey'}}
+  textStyle={{color: 'white'}}
+/>
             <View><TextInput style={{backgroundColor:"black", color:'white',width:200, height:50, borderRadius:8, alignSelf:'center'}} placeholder="Enter a name.." placeholderTextColor="white" onChangeText={(text)=>{setname(text)}}></TextInput></View>
+          
+          
           <TouchableOpacity onPress={saveImg}>
             <View style={[styles.plusSectionButtons,{right:10}]}><Text style={{ color:'white', fontSize:16, alignSelf:"center"}}>Save</Text></View>
             </TouchableOpacity>
@@ -108,7 +176,9 @@ const Add = ()=>{
           
           <View style>
           <View style={[styles.plusSectionButtons,{position:"absolute",left:100,top:70}]}><Text style={{ color:'white'}} >Edit</Text></View>
-          <View style={[styles.plusSectionButtons,{position:"absolute",alignSelf:"center",top:70}]}><Text style={{ color:'white'}} >Favorite</Text></View>
+          <TouchableOpacity onPress={saveImg}>
+          <View style={[styles.plusSectionButtons,{position:"absolute",alignSelf:"center",top:70}]}><Text style={{ color:'white'}}>Favorite</Text></View>
+          </TouchableOpacity>
           <View style={[styles.plusSectionButtons,{position:"absolute",right:100,top:70}]}><Text style={{ color:'white'}}>Delete</Text></View>
           </View>
           </View>
@@ -182,17 +252,17 @@ const Add = ()=>{
 export default Add;
 
 const styles = StyleSheet.create({container:{flex:1},
-    title: {fontSize: 40,          
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-    alignSelf: "center",},
+    title: {fontSize: 30,          
+      fontWeight: 'bold',
+      color: 'white',
+      marginTop: 50,
+      alignSelf: "center",},
     
-    favorites:{height:30, width:35 ,position:"absolute",right:13,top:2},
+    favorites:{height:30, width:35 ,position:"absolute",right:13,top:35},
     style:{height:40, width:40 ,position:"absolute",right:10},
     calendar:{height:40, width:40,position:"absolute", left:10, top:0},
     plus:{height:40, width:40 ,position:"absolute", alignSelf: "center"},
-    fits:{position:"absolute",left:7,fontSize: 18, top:9,          
+    fits:{position:"absolute",left:7,fontSize: 18, top:55,          
       fontWeight: 'medium',
       color: 'white'},
       plusSectionButtons:{position:"absolute",height:35, backgroundColor:"black", width:50,justifyContent:"center",alignItems:"center", borderRadius:10, borderColor:"grey",borderWidth:1}

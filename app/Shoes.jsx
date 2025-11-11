@@ -1,4 +1,4 @@
-import {React,useRef, useState} from 'react';
+import React, { useRef, useState,useEffect} from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity,Animated, PanResponder } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
@@ -7,10 +7,16 @@ import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
 import { useRouter } from 'expo-router';
 import { FlatList } from 'react-native-web';
-const router = useRouter();
-const photos = [{id:1,source:heartlogo},{id:2,source:stlyelogo},{id:3,source:pluslogo},{id:4,source:calendarlogo}]
+import pants from '../assets/LEPANTS.png';
+import shirt from '../assets/LESHIRT.png';
+import { createContext } from "react";
+import { supabase } from '../database/supabase';
 
-function DraggableThumb({ source, onDropTop }) {
+const router = useRouter();
+const photos = [{id:1,source:pants},{id:2,source:shirt},{id:3,source:pluslogo},{id:4,source:calendarlogo},{id:5,source:pluslogo}]
+
+function DraggableThumb({source, onDropTop }) {
+  
     const pan = useRef(new Animated.ValueXY()).current;
   
     const responder = useRef(
@@ -40,6 +46,7 @@ function DraggableThumb({ source, onDropTop }) {
     ).current;
   
     return (
+        
       <Animated.View style={[styles.thumbWrap, { transform: pan.getTranslateTransform() }]} {...responder.panHandlers}>
         <Image source={source} style={styles.thumb} />
       </Animated.View>
@@ -50,12 +57,34 @@ function DraggableThumb({ source, onDropTop }) {
 
 
 function Shoes({ onDropTop }) {
+  const [userImg, setUserImg] = useState([]);
+
+  React.useEffect(() => {
+    const fetchImgs = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userCloset } = await supabase
+        .from('Closet')
+        .select('id')
+        .eq('userid', user.id)
+        .single();
+
+      const { data: imgs, error } = await supabase
+        .from('shoes')
+        .select('link')
+        .eq('closetid', userCloset.id);
+
+      if (error) console.error(error);
+      else setUserImg(imgs);
+    };
+
+    fetchImgs();
+  }, []);
     
     return (
         
         <View style={{top:540, flexDirection: "row", justifyContent: "space-around", gap:5}}>
-        {photos.map((p) => (
-        <DraggableThumb key={p.id} source={p.source} onDropTop={onDropTop} />
+        {userImg.map((p, index) => (
+        <DraggableThumb key={index} source={{uri: p.link}} onDropTop={onDropTop} />
       ))}
     </View>
   );

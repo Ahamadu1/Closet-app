@@ -5,7 +5,7 @@ import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
 import { useRouter } from 'expo-router';
-import { center } from '@shopify/react-native-skia';
+// import { center } from '@shopify/react-native-skia';
 import { supabase } from '../database/supabase';
 import Index from './index';
 
@@ -18,15 +18,32 @@ const AuthPage = () => {
     const [name,setName] = useState('');
     const [pass,setPass] = useState('');
 
+    
+
     async function addUser(){
     let { data, error } = await supabase.auth.signUp({
     email: name,
     password: pass,
 
 }); 
-    if (data?.user){
-      await supabase.from('Profiles').insert([{ user_id : data.user.id, username: data.user.email}])
-    }
+if (data?.user){
+ const {clostData , err} = await supabase.from("Closet").insert([{userid: data.user.id }])}
+if(error){
+  console.log("Full error object:", JSON.stringify(error, null, 2));
+  console.log("Error code:", error.code);
+  console.log("Error message:", error.message);
+  console.log("Error status:", error.status);
+  alert(`Error: ${error.message}`);
+  return;}
+if(error){
+      console.log("Error signing up user",error.code)
+
+}else{
+  console.log("Successfull")
+}
+    // if (data?.user){
+    //   await supabase.from('Profiles').insert([{ user_id : data.user.id, username: data.user.email}])
+    // }
     setName('');
     setsignedUp(true)
 }

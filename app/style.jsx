@@ -89,7 +89,7 @@ const Style = () => {
       {/* Full screen view */}
       <View style={styles.container}>
       <Text style={styles.title}>Klozet</Text>
-      <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:83,          
+      <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:103,          
       fontWeight: 'medium',
       color: 'white'}}>Create Outfit</Text>
 
@@ -107,7 +107,7 @@ const Style = () => {
          {/* Favorites */}
          <TouchableOpacity onPress={()=>router.push('/Favorites')}>
         <Image source={heartlogo} style={styles.favorites}/>
-        <Text style={{position:"absolute",right:1,fontSize: 14, top:33,          
+        <Text style={{position:"absolute",right:1,fontSize: 14, top:63,          
       fontWeight: 'medium',
       color: 'white'}}>Favorites</Text>
       </TouchableOpacity>
@@ -125,14 +125,14 @@ const Style = () => {
   <TouchableOpacity
     style={{
       position:'absolute',
-      top:80, right:20,
+      top:450, right:10,
       height:45, width:160,
       backgroundColor:'black',
       justifyContent:'center', alignItems:'center',
       borderRadius:10, borderColor:'grey', borderWidth:1,
       zIndex: 10
     }}
-    onPress={() => router.push({pathname:'/Generate',params:{topImg:imgTop?.uri || imgTop, bottomImg:imgBottom?.uri ||imgBottom, shoeImg:imgShoes?.uri || imgShoes, otherImg:imgOther?.uri || imgOther}})}
+    onPress={() => router.push({pathname:'/Generate',params:{topImg:imgTop?.uri ?? null, bottomImg:imgBottom?.uri ?? null, shoeImg:imgShoes?.uri ?? null, otherImg:imgOther?.uri ?? null}})}
   >
 
 
@@ -281,17 +281,17 @@ const Style = () => {
 export default Style;
 
 const styles = StyleSheet.create({container:{flex:1},
-    title: {fontSize: 40,          
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-    alignSelf: "center",},
+    title: {fontSize: 30,          
+      fontWeight: 'bold',
+      color: 'white',
+      marginTop: 50,
+      alignSelf: "center"},
     
-    favorites:{height:30, width:35 ,position:"absolute",right:13,top:2},
+    favorites:{height:30, width:35 ,position:"absolute",right:13,top:35},
     style:{height:40, width:40 ,position:"absolute",right:10},
     calendar:{height:40, width:40,position:"absolute", left:10, top:0},
     plus:{height:40, width:40 ,position:"absolute", alignSelf: "center"},
-    fits:{position:"absolute",left:7,fontSize: 18, top:9,          
+    fits:{position:"absolute",left:7,fontSize: 18, top:55,          
       fontWeight: 'medium',
       color: 'white',}, dragText :{borderColor:"grey", width:100,height:100, borderRadius:20, borderWidth:1 ,justifyContent:"center",alignItems:'center'},
       dropBox: {
