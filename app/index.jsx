@@ -1,382 +1,358 @@
-
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
-import { Link, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { supabase } from '../database/supabase';
-import "expo-router/entry";
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
-// import 'react-native-reanimated';
+const { width } = Dimensions.get('window');
 
-const router = useRouter();
+// Design System
+const COLORS = {
+  primary: '#2A003F',
+  secondary: '#1A0029',
+  dark: '#0D0014',
+  accent: '#8B5CF6',
+  accentLight: '#3a0ca3',
+  border: '#4A4A4A',
+  text: '#FFFFFF',
+  textSecondary: '#A0A0A0',
+  cardBg: '#1b002e',
+  emptyText: '#bbb',
+};
 
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+const TYPOGRAPHY = {
+  title: { fontSize: 30, fontWeight: 'bold' },
+  subtitle: { fontSize: 18, fontWeight: 'bold' },
+  body: { fontSize: 16, fontWeight: '400' },
+  caption: { fontSize: 14, fontWeight: '400' },
+  small: { fontSize: 12, fontWeight: '400' },
+};
 
 const Index = () => {
+  const router = useRouter();
+  const [topData, setTopData] = useState([]);
+  const [bottomData, setBottomData] = useState([]);
+  const [accessData, setAccessData] = useState([]);
+  const [shoeData, setShoeData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    // const addimage = async ()=>{
-    //   let result = await ImagePicker.launchImageLibraryAsync({
-    //     allowsEditing: true,
-    //     quality: 1,
-    //   });
-    //   if (!result.canceled){
-    //     console.log(result);
-    //     // router.push('/Plus')
-    //   }else{
-    //     alert("You didnt add any image")
-    //   }
-    // }
-    const [topData, setTopData] = useState([]);
-    const [bottomData, setBottomData] = useState([]);
-    const [accessData, setAccessData] = useState([]);
-    const [shoeData, setShoeData] = useState([]);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
-//   useEffect(()=>{
-//     const checkAuth = async () => {
-//       const { data: { user }, error: userError } = await supabase.auth.getUser();
-// if (userError || !user) {
-//   console.error("No authenticated user:", userError);
-//   return;
-// }
-// console.log("User ID:", user.id);
-//       if (user) {
-//         console.log(user.id)
-//         const {data: closetData, error: closetError} = supabase.from("Closet").select('id').eq("userid",user.id);
-//         const {data: topData, error: topError} = supabase.from("Tops").select('*').eq("closetid",closetData.id);
-//         const {data: bottomData, error: bottomError} = supabase.from("Bottom").select('*').eq("closetid",closetData.id);;
-//         const { data: accessData, error: accessError} = supabase.from("Accessories").select('*').eq("closetid",closetData.id);;
-//         const {data: shoeData, error: shoeError} = supabase.from("shoes").select('*').eq("closetid",closetData.id);;
-
-//       } else {
-        
-//         router.replace("/Authpage")
-//       }
-//     }
-//     checkAuth()
-
-//   },[])
- 
-
-
-useEffect(() => {
   const checkAuth = async () => {
-    //  1. Get user safely
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("No authenticated user:", userError);
-      router.replace("/Authpage");
-      return;
+    try {
+      setLoading(true);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error("No authenticated user:", userError);
+        router.replace("/Authpage");
+        return;
+      }
+
+      const { data: closetData, error: closetError } = await supabase
+        .from("Closet")
+        .select("id")
+        .eq("userid", user.id)
+        .single();
+
+      if (closetError || !closetData) {
+        console.error("Closet not found:", closetError);
+        return;
+      }
+
+      const [tops, bottoms, shoes, accessories] = await Promise.all([
+        supabase.from("Tops").select("*").eq("closetid", closetData.id),
+        supabase.from("Bottoms").select("*").eq("closetid", closetData.id),
+        supabase.from("shoes").select("*").eq("closetid", closetData.id),
+        supabase.from("Accessories").select("*").eq("closetid", closetData.id),
+      ]);
+
+      if (tops.data) setTopData(tops.data);
+      if (bottoms.data) setBottomData(bottoms.data);
+      if (shoes.data) setShoeData(shoes.data);
+      if (accessories.data) setAccessData(accessories.data);
+    } catch (error) {
+      console.error("Auth check error:", error);
+    } finally {
+      setLoading(false);
     }
-
-    console.log("User ID:", user.id);
-
-    //  2. Get Closet
-    const { data: closetData, error: closetError } = await supabase
-      .from("Closet")
-      .select("id")
-      .eq("userid", user.id)
-      .single();
-
-    if (closetError || !closetData) {
-      console.error("Closet not found:", closetError);
-      return;
-    }
-
-    // 3. Fetch data from tables using closetData.id
-    const [tops, bottoms, shoes, accessories] = await Promise.all([
-      supabase.from("Tops").select("*").eq("closetid", closetData.id),
-      supabase.from("Bottom").select("*").eq("closetid", closetData.id),
-      supabase.from("shoes").select("*").eq("closetid", closetData.id),
-      supabase.from("Accessories").select("*").eq("closetid", closetData.id),
-    ]);
-
-    // ✅ 4. Update state
-    if (tops.data) setTopData(tops.data);
-    if (bottoms.data) setBottomData(bottoms.data);
-    if (shoes.data) setShoeData(shoes.data);
-    if (accessories.data) setAccessData(accessories.data);
   };
 
-  checkAuth();
-}, []);
-
- 
-
-    return (
-      
-        <LinearGradient
-        colors={['#2A003F', '#1A0029', '#0D0014']} 
-        locations={[0.1, 0.5, 1]}
-        start={{ x: 0.8, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        style={styles.container}>
-      {/* Full screen view */}
-      <View style={styles.container}>
-      <Text style={styles.title}>Klozet</Text>
-      
-
-      {/* Top Nav view */}
-        <View style={{position: 'absolute',
-  left: 10,
-  right: 10,
-  top: 15,flexDirection:"column" }}>
-    
-     {/* Fits */}
-          <TouchableOpacity onPress={()=>router.push('/Fits')}>
-        <Text style={styles.fits}>Outfits</Text>
-        </TouchableOpacity>
-         
-         {/* Favorites */}
-         <TouchableOpacity onPress={()=>router.push('/Favorites')}>
-        <Image source={heartlogo} style={styles.favorites}/>
-        <Text style={{position:"absolute",right:1,fontSize: 14, top:63,          
-      fontWeight: 'medium',
-      color: 'white'}}>Favorites</Text>
-      </TouchableOpacity>
+  const CategorySection = ({ title, data, section }) => (
+    <TouchableOpacity
+      onPress={() => router.push({ pathname: '/Sections', params: { section } })}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={['rgba(58, 12, 163, 0.25)', 'rgba(0, 0, 0, 0.4)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.sectionCard}
+      >
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={styles.viewAll}>View all →</Text>
         </View>
-        
-        {/* Top Border */}
-        <View style={{borderBottomColor:"grey",borderBottomWidth:1, marginVertical: 15 }}></View>
-       
-          {/* Clothes*/}
-          {/* {data?.map(item=>{
-            <Image id={item.id} source={{uri :item.link}}  style={{width: "48%",  
-              aspectRatio: 1,borderWidth:2 ,width: 300, height:300, borderColor:"black",}}></Image>
-          })} */}
-          <View style={{flexDirection: "col", gap:20}}> 
-         
-         
-         {/* Top Clothes section*/}
-          
-          <TouchableOpacity
-          onPress={() => router.push('/Tops')}>
-  <LinearGradient
-    colors={['#3a0ca3', 'black']}
-    style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>Tops</Text>
-    <Text style={styles.viewAll}>View all →</Text>
-    </View>
   
-          <View style={styles.imageRow}> 
-          
-          {topData && topData.length > 0 ? (
-                
-                topData.map(item => (
-                  <Image key={item.id} source={{ uri: item.link }} style={styles.previewImg} />
-                ))
-                
-              ) : (
-                <Text style={styles.emptyText}>
-                  You have no tops in your closet.
-                </Text>
-                
-)}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.imageRow}
+        >
+          {data && data.length > 0 ? (
+            data.slice(0, 5).map(item => (
+              <Image
+                key={item.id}
+                source={{ uri: item.link }}
+                style={styles.previewImg}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>
+              No {title.toLowerCase()} in your closet yet.
+            </Text>
+          )}
+        </ScrollView>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
 
-          </View>
-          </LinearGradient> 
-          </TouchableOpacity>
+  return (
+    <LinearGradient
+      colors={[COLORS.primary, COLORS.secondary, COLORS.dark]}
+      locations={[0.1, 0.5, 1]}
+      start={{ x: 0.8, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" />
 
-
-          {/* Bottoms Clothes section*/}
-          <TouchableOpacity
-          onPress={() => router.push('/Bottoms')}>
-  <LinearGradient
-    colors={['#3a0ca3', 'black']}
-    style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>Bottoms</Text>
-    <Text style={styles.viewAll}>View all →</Text>
-    </View>
-  
-          <View style={styles.imageRow}> 
-          
-          {bottomData && bottomData.length > 0 ? (
-                
-                bottomData.map(item => (
-                  <Image key={item.id} source={{ uri: item.link }} style={styles.previewImg} />
-                ))
-                
-              ) : (
-                <Text style={styles.emptyText}>
-                  You have no tops in your closet.
-                </Text>
-                
-)}
-
-          </View>
-          </LinearGradient> 
-          </TouchableOpacity>
-        {/* shoes section*/}
-        <TouchableOpacity
-          onPress={() => router.push('/Shoes')}>
-  <LinearGradient
-    colors={['#3a0ca3', 'black']}
-    style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>Shoes</Text>
-    <Text style={styles.viewAll}>View all →</Text>
-    </View>
-  
-          <View style={styles.imageRow}> 
-          
-          {shoeData && shoeData.length > 0 ? (
-                
-                shoeData.map(item => (
-                  <Image key={item.id} source={{ uri: item.link }} style={styles.previewImg} />
-                ))
-                
-              ) : (
-                <Text style={styles.emptyText}>
-                  You have no tops in your closet.
-                </Text>
-                
-)}
-
-          </View>
-          </LinearGradient> 
-          </TouchableOpacity>
-
-          {/* Acessories section*/}
-          <TouchableOpacity
-          onPress={() => router.push('/Accessories')}>
-  <LinearGradient
-    colors={['#3a0ca3', 'black']}
-    style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>Accessories</Text>
-    <Text style={styles.viewAll}>View all →</Text>
-    </View>
-  
-          <View style={styles.imageRow}> 
-          
-          {accessData && accessData.length > 0 ? (
-                
-                accessData.map(item => (
-                  <Image key={item.id} source={{ uri: item.link }} style={styles.previewImg} />
-                ))
-                
-              ) : (
-                <Text style={styles.emptyText}>
-                  You have no Accessories in your closet.
-                </Text>
-                
-)}
-
-          </View>
-          </LinearGradient> 
-          </TouchableOpacity>
-          </View>
-
-
-
-        
-
-
-
-        {/* Bottom Border */}
-        <View style={{borderBottomColor:"grey",borderBottomWidth:1,marginVertical:670}}></View>
-
-        {/* Bottom Nav view */}
-        <View style={{position: 'absolute',
-  left: 10,
-  right: 10,
-  bottom: 70,flexDirection:"column", color:"white"}}>
-         
-         {/* Calendar */}
-         <TouchableOpacity onPress={()=>router.push('/Schedule')}>
-        <Image source={calendarlogo} style={styles.calendar}/>
-        <Text style={{position:"absolute",left:1,fontSize: 14, top:30,          
-      fontWeight: 'medium', color: 'white'}}>Calendar</Text>
-        </TouchableOpacity>
-        
-        {/* Add */}
-        <TouchableOpacity onPress={()=>router.push('/Add')}>
-        <Image source={pluslogo} style={styles.plus}/>
-        </TouchableOpacity>
-
-       {/* Style */} 
-       <TouchableOpacity onPress={()=>router.push('/Style')}>
-      <Text style={{position:"absolute",right:12,fontSize: 14, top:32,          
-      fontWeight: 'medium',
-      color: 'white'}}>Style</Text>
-        <Image source={stlyelogo} style={styles.style}/>
-        </TouchableOpacity>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Klozet</Text>
         </View>
 
+        {/* Top Navigation */}
+        <View style={styles.topNav}>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => router.push('/Fits')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.navText}>Outfits</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => router.push('/Favorites')}
+            activeOpacity={0.7}
+          >
+            <Image source={heartlogo} style={styles.navIcon} />
+            <Text style={styles.navText}>Favorites</Text>
+          </TouchableOpacity>
         </View>
-        </LinearGradient>
-      
-    )
-  }
-  
+
+        <View style={styles.divider} />
+
+        {/* Content */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.accent} />
+            <Text style={styles.loadingText}>Loading your closet...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <CategorySection title="Tops" data={topData} section="Tops" />
+            <CategorySection title="Bottoms" data={bottomData} section="Bottoms" />
+            <CategorySection title="shoes" data={shoeData} section="shoes" />
+            <CategorySection title="Accessories" data={accessData} section="Accessories" />
+          </ScrollView>
+        )}
+
+        {/* Bottom Navigation */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity
+            style={styles.bottomNavButton}
+            onPress={() => router.push('/Schedule')}
+            activeOpacity={0.7}
+          >
+            <Image source={calendarlogo} style={styles.bottomNavIcon} />
+            <Text style={styles.bottomNavText}>Calendar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.bottomNavButton}
+            onPress={() => router.push('/Add')}
+            activeOpacity={0.7}
+          >
+            <Image source={pluslogo} style={styles.bottomNavIconLarge} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.bottomNavButton}
+            onPress={() => router.push('/Style')}
+            activeOpacity={0.7}
+          >
+            <Image source={stlyelogo} style={styles.bottomNavIcon} />
+            <Text style={styles.bottomNavText}>Style</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+};
 
 export default Index;
 
-const styles = StyleSheet.create({container:{flex:1},
-    title: {fontSize: 30,          
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 50,
-    alignSelf: "center",},
-    
-    favorites:{height:30, width:35 ,position:"absolute",right:13,top:35},
-    style:{height:40, width:40 ,position:"absolute",right:10},
-    calendar:{height:40, width:40,position:"absolute", left:10, top:0},
-    plus:{height:40, width:40 ,position:"absolute", alignSelf: "center"},
-    fits:{position:"absolute",left:7,fontSize: 18, top:55,          
-      fontWeight: 'medium',
-      color: 'white',}, img: {  
-        aspectRatio: 1,borderWidth:2 ,width: 100, height:100, borderColor:"black"},sectionCard: {
-          backgroundColor: '#1b002e',
-          borderRadius: 15,
-          marginVertical: 12,
-          marginHorizontal: 16,
-          overflow: 'hidden',
-          elevation: 6, // Android shadow
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.3,
-          shadowRadius: 5, // iOS shadow
-        },
-        sectionHeader: {
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingVertical: 10,
-          paddingHorizontal: 10,
-          
-        },
-        sectionTitle: {
-          color: 'white',
-          fontSize: 18,
-          fontWeight: 'bold',
-        },
-        viewAll: {
-          color: '#e0c3fc',
-          fontSize: 14,
-        },
-        imageRow: {
-          flexDirection: 'row',
-          justifyContent: 'flex-start',
-          padding: 10,
-          gap: 10,
-        },
-        previewImg: {
-          width: 100,
-          height: 100,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: '#333',
-        },
-        emptyText: {
-          color: '#bbb',
-          padding: 10,
-        },
-      });
-
-
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  header: {
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.md,
+    alignItems: 'center',
+  },
+  title: {
+    ...TYPOGRAPHY.title,
+    color: COLORS.text,
+  },
+  topNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  navIcon: {
+    width: 24,
+    height: 24,
+    tintColor: COLORS.text,
+  },
+  navText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SPACING.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: COLORS.textSecondary,
+    marginTop: SPACING.md,
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  sectionCard: {
+    backgroundColor: 'transparent',
+    borderRadius: 15,
+    marginVertical: SPACING.sm,
+    marginHorizontal: SPACING.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)', // ← Accent color border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2, // ← Softer shadow
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+  },
+  sectionTitle: {
+    ...TYPOGRAPHY.subtitle,
+    color: COLORS.text,
+  },
+  viewAll: {
+    color: '#e0c3fc',
+    fontSize: 14,
+  },
+  imageRow: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  previewImg: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  emptyText: {
+    color: COLORS.emptyText,
+    padding: SPACING.md,
+    fontStyle: 'italic',
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingBottom: SPACING.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  bottomNavButton: {
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  bottomNavIcon: {
+    width: 28,
+    height: 28,
+    tintColor: COLORS.text,
+  },
+  bottomNavIconLarge: {
+    width: 40,
+    height: 40,
+    tintColor: COLORS.text,
+  },
+  bottomNavText: {
+    ...TYPOGRAPHY.small,
+    color: COLORS.text,
+  },
+});

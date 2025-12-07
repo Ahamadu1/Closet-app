@@ -81,13 +81,52 @@ function Accessories({ onDropTop }) {
   }, []);
     
     return (
-        
-        <View style={{top:540, flexDirection: "row", justifyContent: "space-around", gap:5}}>
-        {userImg.map((p, index) => (
-        <DraggableThumb key={index} source={{uri: p.link}} onDropTop={onDropTop} />
-      ))}
-    </View>
-  );
+      <>
+      {onDropTop ? (
+        <View style={{ top: 540, flexDirection: "row", justifyContent: "space-around", gap: 5 }}>
+          {userImg?.map((p, index) => (
+            <DraggableThumb key={index} source={{ uri: p.link }} onDropTop={onDropTop} />
+          ))}
+        </View>
+      ) : (
+        <LinearGradient
+        colors={['#2A003F', '#1A0029', '#0D0014']} 
+        locations={[0.1, 0.5, 1]}
+        start={{ x: 0.8, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        style={styles.container}>
+      {/* Full screen view */}
+      <View style={styles.container}>
+      <Text style={styles.title}>Klozet</Text>
+      <Text style={{position:"absolute",alignSelf:"center",fontSize: 25, top:103,          
+      fontWeight: 'medium',
+      color: 'white'}}>Fits</Text>
+
+        <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between",  paddingHorizontal: 10 }}>
+          {userImg?.map((photo, i) => (
+            <TouchableOpacity key={i} onPress={() => { setClicked({ uri: photo.link }); setshowOne(true); }}>
+              <Image
+                source={{ uri: photo.link }}
+                style={{
+                  width: "48%",
+                  aspectRatio: 1,
+                  borderWidth: 2,
+                  height: 300,
+                  borderColor: "black",
+                }}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+        </View>
+        </LinearGradient>
+      )}
+      
+      </>
+
+);
+
+
 }
 
 export default Accessories;
@@ -104,4 +143,21 @@ const styles = StyleSheet.create({
       marginHorizontal: 6,
     },
     thumb: { width: 70, height: 70, borderRadius: 8 },
-  });
+
+    
+      title: {fontSize: 30,          
+        fontWeight: 'bold',
+        color: 'white',
+        marginTop: 50,
+        alignSelf: "center",},
+      
+      favorites:{height:30, width:35 ,position:"absolute",right:13,top:35},
+      style:{height:40, width:40 ,position:"absolute",right:10},
+      calendar:{height:40, width:40,position:"absolute", left:10, top:0},
+      plus:{height:40, width:40 ,position:"absolute", alignSelf: "center"},
+      fits:{position:"absolute",left:7,fontSize: 18, top:55,          
+        fontWeight: 'medium',
+        color: 'white',}
+  
+  })
+  ;

@@ -1,104 +1,127 @@
-// bgremover.js (server)
 import express from "express";
 import cors from "cors";
 import Replicate from "replicate";
 import dotenv from "dotenv";
 import multer from "multer";
-import path  from "path";
-import fs from 'fs'
-import { readFile } from "node:fs/promises";
+import fs from "fs";
 
-const app = express();
 dotenv.config();
-if (!process.env.REPLICATE_API_TOKEN) {
-    console.error("Missing REPLICATE_API_TOKEN in .env");
-    process.exit(1);
-  }
-const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN,
-  });
+const app = express();
 
-app.use(cors({
-    origin: ['http://localhost:8081', 'http://10.0.2.2:8081', 'http://localhost:19006'],
-    credentials: true
-}));
-  
-const upload = multer({ 
-    dest: 'uploads/',
-    limits: { fileSize: 10 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed'));
-        }
-    }
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
 });
 
+app.use(cors());
+app.use(express.json());
+
+const upload = multer({ dest: "uploads/" });
+
+// ✅ Rate limiter - track requests
+let requestCount = 0;
+let resetTime = Date.now();
+
+const checkRateLimit = () => {
+  const now = Date.now();
   
-  app.post('/remove-background', upload.single('image'), async (req, res) => {
+  // Reset counter every minute
+  if (now - resetTime > 60000) {
+    requestCount = 0;
+    resetTime = now;
+  }
+  
+  // Allow max 5 requests per minute (leave 1 as buffer)
+  if (requestCount >= 5) {
+    return false;
+  }
+  
+  requestCount++;
+  return true;
+};
+
+// ✅ Retry with exponential backoff
+const replicateWithRetry = async (dataUrl, maxRetries = 2) => {
+  for (let i = 0; i < maxRetries; i++) {
     try {
-
-
-        const imgpath = "/Users/ahamadu/CLOSET_APP/assets/LESHIRT.png"
-        const imageBuffer = await readFile(imgpath);
-        const base64Image = imageBuffer.toString('base64');
-        const mimeType = imgpath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-        const dataUrl = `data:${mimeType};base64,${base64Image}`;
-    
-
-
-        console.log('Request body keys:', Object.keys(req.body || {}));
-        console.log('Request files:', req.file ? 'File present' : 'No file');
-        console.log('Content-Type:', req.get('Content-Type'));
-        console.log('Received remove-background request');
-      if (!req.file) {
-        return res.status(400).json({ error: 'No image file provided' });
-      }
-      
-      console.log("url", req.body.url)
-      console.log('File details:', {
-        filename: req.file.filename,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        path: req.file.path
-    });
-
-  
-      
-    // const imageBuffer = await fs.promises.readFile(req.file.path);
-    //   console.log("image buffer",imageBuffer)
-  
-    //   const output = await replicate.run(
-    //     "rembg/rembg:1.4.1",
-    //     {
-    //         input: { image: fs.createReadStream(req.file.path) }
-    //     }
-    //   );
-    
-    const output = await replicate.run("851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc", { input:{ image: dataUrl }});
-
-    
-    console.log("Image URL::", output.url().href);
-   
-    console.log('Replicate response received:', typeof output);
-  
-      // Clean up uploaded file
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.log('Error deleting temp file:', err);
-        else console.log('Temp file deleted successfully');
-      });
-  
-      const result = output.url().href
-      console.log("resukt",result)
-      return res.json({ result });
+      const output = await replicate.run(
+        "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
+        { input: { image: dataUrl } }
+      );
+      return output;
     } catch (error) {
-      console.error('Error:', error);
-      res.status(500).json({ error: 'Background removal failed' });
+      if (error.response?.status === 429) {
+        const retryAfter = parseInt(error.response.headers['retry-after'] || '10');
+        console.log(`Rate limited. Waiting ${retryAfter}s before retry ${i + 1}/${maxRetries}...`);
+        
+        if (i < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, retryAfter * 1000));
+        } else {
+          throw error; // Give up after max retries
+        }
+      } else {
+        throw error;
+      }
     }
-  });
-  
-  app.listen(3000, () => {
-    console.log('Server running on port 3000');
-  });
+  }
+};
+
+app.post("/remove-background", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image file provided" });
+    }
+
+    console.log("File received:", req.file.path);
+
+    // ✅ Check rate limit before processing
+    if (!checkRateLimit()) {
+      fs.unlinkSync(req.file.path);
+      return res.status(429).json({ 
+        error: "rate_limit", 
+        message: "Too many requests. Please wait a minute." 
+      });
+    }
+
+    // Read file as base64
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const base64 = fileBuffer.toString("base64");
+
+    const mime = req.file.mimetype === "image/png" ? "image/png" : "image/jpeg";
+    const dataUrl = `data:${mime};base64,${base64}`;
+
+    let output;
+
+    try {
+      // ✅ Use retry logic
+      output = await replicateWithRetry(dataUrl);
+    } catch (apiError) {
+      console.log("Replicate error:", apiError);
+      fs.unlinkSync(req.file.path);
+      
+      // Return original image on failure
+      return res.json({ 
+        result: null, 
+        error: "replicate_failed",
+        fallback: true 
+      });
+    }
+
+    // Clean temp file
+    fs.unlinkSync(req.file.path);
+
+    return res.json({ result: output?.url?.href ?? null });
+  } catch (err) {
+    console.log("BG REMOVE ERROR:", err);
+    
+    // Clean up temp file if it exists
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {}
+    }
+    
+    return res.status(500).json({ error: "server_failed" });
+  }
+});
+
+app.listen(3000, () => console.log("✅ Server running on port 3000"));

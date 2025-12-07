@@ -1,12 +1,24 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, ActivityIndicator, Modal, Dimensions } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Animated, PanResponder, Dimensions, ScrollView, TextInput, SafeAreaView, StatusBar, ActivityIndicator, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import heartlogo from '../assets/hearticon.png';
 import stlyelogo from '../assets/hanger.png';
 import pluslogo from '../assets/plusbutton.png';
 import calendarlogo from '../assets/calendaricon.png';
-import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '../database/supabase';
+import { useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
+const TABLE_MAP = {
+  Tops: "tops",
+  Bottoms: "bottoms",
+  shoes: "shoes",
+  Shoes: "shoes",
+  Accessories: "accessories",
+};
+
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -39,59 +51,115 @@ const TYPOGRAPHY = {
   caption: { fontSize: 14, fontWeight: '400' },
 };
 
-const Favorites = () => {
+function DraggableThumb({ source, onDropTop, onDragStart, onDragEnd }) {
+  const pan = useRef(new Animated.ValueXY()).current;
+
+  const responder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: pan.x._value, y: pan.y._value });
+        pan.setValue({ x: 0, y: 0 });
+        onDragStart();
+      },
+
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+
+      onPanResponderRelease: (_e, gesture) => {
+        pan.flattenOffset();
+        onDropTop?.(source, gesture);
+        onDragEnd();
+
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: true,
+          bounciness: 6,
+        }).start();
+      },
+    })
+  ).current;
+
+  return (
+    <Animated.View
+      style={[styles.thumbWrap, { transform: pan.getTranslateTransform() }]}
+      {...responder.panHandlers}
+    >
+      <Image source={source} style={styles.thumb} />
+    </Animated.View>
+  );
+}
+
+function Sections({ onDropTop, section }) {
   const router = useRouter();
-  const [photos, setPhotos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [userImg, setUserImg] = useState([]);
+  const { section: sectionFromRoute } = useLocalSearchParams();
   const [showModal, setShowModal] = useState(false);
   const [clicked, setClicked] = useState(null);
+  const activeSection = section ?? sectionFromRoute;
+  const [newName, setNewName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const scrollViewRef = useRef(null);
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const fetchFavorites = async () => {
+  const addFav = async () => {
     try {
-      setLoading(true);
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (userError || !userData?.user) {
-        console.error("User not logged in:", userError);
-        return;
-      }
 
-      const { data: closetData, error: closetError } = await supabase
-        .from("Closet")
-        .select("*")
-        .eq("userid", userData.user.id)
-        .single();
 
-      if (closetError || !closetData) {
-        console.error("Closet not found:", closetError);
-        return;
-      }
 
-      const { data: favData, error: favError } = await supabase
+const table = TABLE_MAP[activeSection];
+
+if (!table) {
+  console.error("Invalid section:", activeSection);
+  return;
+}
+
+const { data: imgs, error } = await supabase
+  .from(table)
+  .select('link, name')
+  .eq('closetid', userCloset.id);
+
+
+      
+      const { error: favError } = await supabase
         .from("Favorites")
-        .select("id, link, name")
-        .eq("closetid", closetData.id);
+        .insert([
+          {
+            link: clicked.link,
+            name: clicked.name,
+            closetid: closetData.id,
+          }
+        ]);
 
-      if (favError) {
-        console.error(favError);
-      } else {
-        setPhotos(favData || []);
+      if (!favError) {
+        alert("Added to favorites!");
       }
     } catch (error) {
-      console.error("Fetch favorites error:", error);
-    } finally {
-      setLoading(false);
+      console.error("Add favorite error:", error);
     }
   };
 
   const handleDelete = async () => {
     try {
+      const fileName = clicked.link.split("/").pop();
+      
+      const { error: storageError } = await supabase
+        .storage
+        .from(activeSection)
+        .remove([`${clicked.name}/${fileName}`]);
+
+      if (storageError) {
+        console.log("Storage delete error:", storageError);
+      }
+
       const { error: dbError } = await supabase
-        .from("Favorites")
+        .from(activeSection)
         .delete()
         .eq("link", clicked.link);
 
@@ -100,13 +168,135 @@ const Favorites = () => {
         return;
       }
 
-      alert("Removed from favorites.");
-      setPhotos(prev => prev.filter(item => item.link !== clicked.link));
+      alert("Deleted successfully.");
       setShowModal(false);
+      setUserImg(prev => prev.filter(item => item.link !== clicked.link));
     } catch (e) {
       console.log("Delete error:", e);
     }
   };
+
+  const handleEdit = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (result.canceled) return;
+
+      const newImg = result.assets[0];
+      const base64 = await FileSystem.readAsStringAsync(newImg.uri, {
+        encoding: "base64",
+      });
+
+      const finalName = newName?.length > 0 ? newName : clicked.name;
+      const newFilePath = `${finalName}/${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(activeSection)
+        .upload(newFilePath, decode(base64), { contentType: "image/jpeg" });
+
+      if (uploadError) {
+        alert("Failed to upload.");
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from(activeSection)
+        .getPublicUrl(newFilePath);
+
+      const newUrl = publicData.publicUrl;
+
+      const oldFileName = clicked.link.split("/").pop();
+      const oldFolderName = clicked.name;
+      await supabase.storage
+        .from(activeSection)
+        .remove([`${oldFolderName}/${oldFileName}`]);
+
+      const { error: updateError } = await supabase
+        .from(activeSection)
+        .update({
+          link: newUrl,
+          name: finalName,
+        })
+        .eq("link", clicked.link);
+
+      if (updateError) {
+        alert("Failed to update.");
+        return;
+      }
+
+      alert("Updated successfully!");
+
+      setClicked({
+        link: newUrl,
+        name: finalName,
+      });
+
+      setUserImg(prev =>
+        prev.map(item =>
+          item.link === clicked.link
+            ? { ...item, link: newUrl, name: finalName }
+            : item
+        )
+      );
+    } catch (err) {
+      console.log("Edit error:", err);
+    }
+  };
+
+  React.useEffect(() => {
+    const fetchImgs = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        const { data: userCloset } = await supabase
+          .from('Closet')
+          .select('id')
+          .eq('userid', user.id)
+          .single();
+
+        const { data: imgs, error } = await supabase
+          .from(activeSection)
+          .select('link, name')
+          .eq('closetid', userCloset.id);
+
+        if (error) console.error(error);
+        else setUserImg(imgs || []);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImgs();
+  }, [activeSection]);
+
+  if (onDropTop) {
+    return (
+      <ScrollView
+        horizontal
+        ref={scrollViewRef}
+        showsHorizontalScrollIndicator={false}
+        scrollEnabled={scrollEnabled}
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {userImg?.map((p, index) => (
+          <DraggableThumb
+            key={index}
+            source={{ uri: p.link }}
+            onDropTop={onDropTop}
+            onDragStart={() => setScrollEnabled(false)}
+            onDragEnd={() => setScrollEnabled(true)}
+          />
+        ))}
+      </ScrollView>
+    );
+  }
 
   return (
     <LinearGradient
@@ -118,16 +308,16 @@ const Favorites = () => {
     >
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
-
+        
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Klozet</Text>
-          <Text style={styles.subtitle}>Favorites</Text>
+          <Text style={styles.subtitle}>{activeSection}</Text>
         </View>
 
         {/* Top Navigation */}
         <View style={styles.topNav}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.navButton}
             onPress={() => router.push('/Fits')}
             activeOpacity={0.7}
@@ -135,7 +325,7 @@ const Favorites = () => {
             <Text style={styles.navText}>Outfits</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.navButton}
             onPress={() => router.push('/Favorites')}
             activeOpacity={0.7}
@@ -152,26 +342,21 @@ const Favorites = () => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.accent} />
           </View>
-        ) : photos.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Image source={heartlogo} style={styles.emptyIcon} />
-            <Text style={styles.emptyText}>No favorites yet</Text>
-            <Text style={styles.emptySubtext}>
-              Items you favorite will appear here
-            </Text>
-          </View>
         ) : (
-          <ScrollView
+          <ScrollView 
             style={styles.scrollView}
             contentContainerStyle={styles.gridContainer}
             showsVerticalScrollIndicator={false}
           >
-            {photos.map((photo) => (
-              <TouchableOpacity
-                key={photo.id}
+            {userImg?.map((photo, i) => (
+              <TouchableOpacity 
+                key={i}
                 style={styles.card}
                 onPress={() => {
-                  setClicked(photo);
+                  setClicked({
+                    link: photo.link,
+                    name: photo.name
+                  });
                   setShowModal(true);
                 }}
                 activeOpacity={0.9}
@@ -185,11 +370,9 @@ const Favorites = () => {
                   colors={['transparent', 'rgba(0,0,0,0.6)']}
                   style={styles.cardOverlay}
                 >
-                  {photo.name && (
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {photo.name}
-                    </Text>
-                  )}
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {photo.name}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
@@ -205,13 +388,11 @@ const Favorites = () => {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <ScrollView
+              <ScrollView 
                 contentContainerStyle={styles.modalScrollContent}
                 showsVerticalScrollIndicator={false}
               >
-                {clicked?.name && (
-                  <Text style={styles.modalTitle}>{clicked.name}</Text>
-                )}
+                <Text style={styles.modalTitle}>{clicked?.name}</Text>
 
                 <Image
                   source={{ uri: clicked?.link }}
@@ -229,13 +410,37 @@ const Favorites = () => {
                   </TouchableOpacity>
 
                   <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handleEdit}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={addFav}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.buttonText}>Favorite</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={[styles.primaryButton, styles.deleteButton]}
                     onPress={handleDelete}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.buttonText}>Remove</Text>
+                    <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
+
+                <TextInput
+                  placeholder="Rename..."
+                  placeholderTextColor={COLORS.textSecondary}
+                  style={styles.input}
+                  onChangeText={setNewName}
+                  value={newName}
+                />
               </ScrollView>
             </View>
           </View>
@@ -272,9 +477,9 @@ const Favorites = () => {
       </SafeAreaView>
     </LinearGradient>
   );
-};
+}
 
-export default Favorites;
+export default Sections;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -323,28 +528,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    tintColor: COLORS.border,
-    marginBottom: SPACING.lg,
-    opacity: 0.5,
-  },
-  emptyText: {
-    ...TYPOGRAPHY.subtitle,
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  emptySubtext: {
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
   scrollView: {
     flex: 1,
   },
@@ -385,6 +568,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  scrollContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  scrollContent: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: 150,
+    gap: SPACING.sm,
+    
+  },
+  thumbWrap: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.text,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardBg,
+  },
+  thumb: { 
+    width: 70, 
+    height: 70, 
+    borderRadius: 8,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -408,14 +622,16 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   modalImage: {
-    width: width - SPACING.lg * 2,
-    height: width - SPACING.lg * 2,
+    width: width - (SPACING.lg * 2),
+    height: width - (SPACING.lg * 2),
     borderRadius: 16,
     alignSelf: 'center',
     backgroundColor: COLORS.cardBg,
   },
   actionButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: SPACING.md,
     marginTop: SPACING.lg,
   },
@@ -426,7 +642,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
-    flex: 1,
+    minWidth: 80,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -442,6 +658,16 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '500',
+  },
+  input: {
+    backgroundColor: COLORS.buttonBg,
+    color: COLORS.text,
+    padding: SPACING.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: SPACING.lg,
+    fontSize: 16,
   },
   bottomNav: {
     position: 'absolute',
