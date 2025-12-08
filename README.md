@@ -96,34 +96,72 @@ MIT License.
 
 🚀 Sharing the App Using Expo Tunnel
 
-Tunnel mode allows anyone to open and test the Expo app without being on the same WiFi network—perfect for professors, classmates, and presentations.
+Option 1 — Open the Published Expo Version (Recommended)
 
-Why Tunnel Mode?
-	•	Allows public access to your development build
-	•	Works anywhere (not restricted to your home network)
-	•	Opens instantly inside the Expo Go app
-	•	No installation or environment setup required for the viewer
+This version works 24/7 and does not require my computer to be running.
 
-⸻
+Live Demo Link
 
-How to Enable Tunnel Mode
-	1.	Start your development server:
-npx expo start
+📌 https://expo.dev/accounts/ahamadu123/projects/closetapp/updates/6db056f5-9550-428e-9b37-ab22278be69a
 
-2.	When the Expo Dev Tools appear, press:
-SHIFT + T
-(Switches the connection mode to Tunnel)
-3.	Expo will now generate a public link and QR code:
-exp://yourname-yourproject.exp.direct
-4.	Share the link with anyone.
-They can scan it or open it in Expo Go.
+Steps
 
-⸻
+Install Expo Go on your phone
 
-Result
-	•	Anyone can run your app on their phone instantly
-	•	No WiFi restrictions
-	•	No need to clone the repo or install dependencies
-	•	Perfect for demos and project submissions
+iPhone: App Store
+
+Android: Play Store
+
+Open the link above
+
+Expo Go will automatically launch the app
+
+No setup or installation required.
+
+✅ Option 2 — Run the App via Expo Tunnel (During Development)
+
+Tunnel mode allows anyone to run the app even if they are not on my WiFi network, as long as the development server is active.
+
+Steps
+
+Run the project in tunnel mode:
+
+npx expo start --tunnel
 
 
+A QR code and a public URL will appear
+
+Open Expo Go
+
+Scan the QR code or open the URL
+
+The app loads directly in Expo Go
+
+⚠️ Tunnel mode only works while my development server is running.
+
+🛠️ Requirements
+
+To run the app using either method, the viewer needs:
+
+A smartphone with Expo Go installed
+
+An internet connection
+
+(Tunnel mode only) My development server must be active at the time of testing
+
+The published version has no requirements other than Expo Go.
+
+🧪 Troubleshooting
+Expo Go shows a blank screen
+
+Swipe down to refresh or restart Expo Go.
+
+App does not load in tunnel mode
+
+I may need to restart the development server and run:
+
+npx expo start --tunnel
+
+Published link not opening
+
+Expo servers may temporarily cache updates — try reopening Expo Go.
