@@ -94,3 +94,36 @@ Pull requests are welcome! Feel free to open issues for feature suggestions or b
 
 MIT License.
 
+🚀 Sharing the App Using Expo Tunnel
+
+Tunnel mode allows anyone to open and test the Expo app without being on the same WiFi network—perfect for professors, classmates, and presentations.
+
+Why Tunnel Mode?
+	•	Allows public access to your development build
+	•	Works anywhere (not restricted to your home network)
+	•	Opens instantly inside the Expo Go app
+	•	No installation or environment setup required for the viewer
+
+⸻
+
+How to Enable Tunnel Mode
+	1.	Start your development server:
+npx expo start
+
+2.	When the Expo Dev Tools appear, press:
+SHIFT + T
+(Switches the connection mode to Tunnel)
+3.	Expo will now generate a public link and QR code:
+exp://yourname-yourproject.exp.direct
+4.	Share the link with anyone.
+They can scan it or open it in Expo Go.
+
+⸻
+
+Result
+	•	Anyone can run your app on their phone instantly
+	•	No WiFi restrictions
+	•	No need to clone the repo or install dependencies
+	•	Perfect for demos and project submissions
+
+
